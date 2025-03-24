@@ -20,12 +20,16 @@ func main() {
 		log.Println(err)
 	}
 
-	router := gin.New()
+	appPort := os.Getenv("APP_PORT")
+	if appPort == "" {
+		appPort = ":8080" // Default fallback
+	}
 
+	router := gin.New()
 	// add logger currently gin logger suffice
 	router.Use(gin.Logger())
 
 	setupRoutes(router)
 
-	log.Fatal(router.Run(os.Getenv("APP_PORT")))
+	log.Fatal(router.Run(appPort))
 }
