@@ -2,11 +2,15 @@ package routes
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/MehulSuthar-000/url-shortener/helpers"
+	"github.com/MehulSuthar-000/url-shortener/services"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 )
 
 type request struct {
@@ -37,6 +41,38 @@ func ShortenUrl(ctx *gin.Context) {
 	}
 
 	// Implement rate limiting
+	rateDB := services.CreateClient(1)
+	defer rateDB.Close()
+
+	clientIP := ctx.ClientIP()
+	apiQuota, err := strconv.Atoi(os.Getenv("API_QUOTA"))
+	if err != nil || apiQuota <= 0 {
+		apiQuota = 10 // Default quota
+	}
+	// Decrease quota atomically
+	val, err := rateDB.Decr(services.Ctx, clientIP).Result()
+	if err == redis.Nil {
+		// Initialize for a new user
+		_ = rateDB.Set(services.Ctx, clientIP, apiQuota-1, 30*time.Minute).Err()
+		return
+	} else if err != nil {
+		// Log Redis connection error
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Redis error"})
+		return
+	}
+
+	if val < 0 {
+		// Get time left for the key to expire
+		ttl, err := rateDB.TTL(services.Ctx, clientIP).Result()
+		if err != nil || ttl < 0 {
+			ttl = 0
+		}
+		ctx.JSON(http.StatusTooManyRequests, gin.H{
+			"error":            "Rate limit exceeded",
+			"rate_limit_reset": int(ttl.Seconds() / 60), // Convert TTL to minutes
+		})
+		return
+	}
 
 	// Check if the input is an actual URL
 	if !govalidator.IsURL(body.URL) {

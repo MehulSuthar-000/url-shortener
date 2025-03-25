@@ -11,7 +11,7 @@ import (
 
 func setupRoutes(app *gin.Engine) {
 	app.GET("/:url", routes.ResolveURL)
-	app.POST("/api/v1", routes.ShortenURL)
+	app.POST("/api/v1", routes.ShortenUrl)
 }
 
 func main() {

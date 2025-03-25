@@ -13,7 +13,7 @@ func EnforceHTTP(url string) string {
 }
 
 func RemoveDomainError(inputURL string) bool {
-	if url == os.Getenv("DOMAIN") {
+	if inputURL == os.Getenv("DOMAIN") {
 		return false
 	}
 
