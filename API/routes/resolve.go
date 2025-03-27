@@ -45,5 +45,4 @@ func ResolveURL(ctx *gin.Context) {
 	}
 
 	ctx.Redirect(http.StatusMovedPermanently, value)
-	return
 }

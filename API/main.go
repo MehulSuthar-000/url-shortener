@@ -15,7 +15,7 @@ func setupRoutes(app *gin.Engine) {
 }
 
 func main() {
-	err := godotenv.Load("/home/mehul/go_projects/url_shortner/config/.env")
+	err := godotenv.Load()
 	if err != nil {
 		log.Println(err)
 	}
